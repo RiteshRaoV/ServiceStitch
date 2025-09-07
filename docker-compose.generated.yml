@@ -1,0 +1,45 @@
+services:
+  nats:
+    image: nats:2.10-alpine
+    ports:
+    - 4222:4222
+    - 8222:8222
+  auth:
+    build:
+      context: C:\Users\rithe\Desktop\ServiceStitch
+      dockerfile: orchestration/Dockerfile.mock
+    environment:
+    - 'MOCK_ENDPOINTS=[{"path": "/signup", "method": "POST", "response": {"id": 1,
+      "name": "testuser"}}, {"path": "/login", "method": "POST", "response": {"status":
+      "ok", "token": "abc123"}}]'
+    ports:
+    - 8001:80
+  payments:
+    build:
+      context: C:\Users\rithe\Desktop\ServiceStitch
+      dockerfile: orchestration/Dockerfile.mock
+    environment:
+    - 'MOCK_ENDPOINTS=[{"path": "/charge", "method": "POST", "response": {"status":
+      "processed", "transaction_id": "tx123"}, "delay": 200, "failure_rate": 20, "nats_publish":
+      [{"subject": "payments.completed", "data": {"transaction_id": "{{transaction_id}}"}}]}]'
+    ports:
+    - 8002:80
+  analytics:
+    build:
+      context: C:\Users\rithe\Desktop\ServiceStitch
+      dockerfile: orchestration/Dockerfile.mock
+    environment:
+    - 'MOCK_ENDPOINTS=[{"path": "/track", "method": "POST", "response": {"event":
+      "tracked", "success": true}}]'
+    ports:
+    - 8003:80
+  notifier:
+    build:
+      context: C:\Users\rithe\Desktop\ServiceStitch
+      dockerfile: orchestration/Dockerfile.mock
+    environment:
+    - 'MOCK_ENDPOINTS=[{"path": "/notify", "method": "POST", "response": {"status":
+      "notification sent"}}]'
+    - 'NATS_SUBSCRIBE=[{"subject": "payments.completed", "action": "POST /notify"}]'
+    ports:
+    - 8004:80

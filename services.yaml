@@ -1,0 +1,50 @@
+services:
+  nats:
+    type: infra
+    image: nats:2.10-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  auth:
+    type: mock
+    port: 8001
+    endpoints:
+      - path: /signup
+        method: POST
+        response: {"id": 1, "name": "testuser"}
+      - path: /login
+        method: POST
+        response: {"status": "ok", "token": "abc123"}
+
+  payments:
+    type: mock
+    port: 8002
+    endpoints:
+      - path: /charge
+        method: POST
+        response: {"status": "processed", "transaction_id": "tx123"}
+        delay: 200         # ms
+        failure_rate: 20   # 20% failure
+        nats_publish:
+          - subject: "payments.completed"
+            data: {"transaction_id": "{{transaction_id}}"} 
+
+  analytics:
+    type: mock
+    port: 8003
+    endpoints:
+      - path: /track
+        method: POST
+        response: {"event": "tracked", "success": True}
+
+  notifier:
+    type: mock
+    port: 8004
+    endpoints:
+      - path: /notify
+        method: POST
+        response: {"status": "notification sent"}
+    nats_subscribe:
+      - subject: "payments.completed"
+        action: "POST /notify"

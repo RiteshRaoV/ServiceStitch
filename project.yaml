@@ -1,0 +1,20 @@
+project_name: myapp
+apps:
+  - name: core
+    apis:
+      - path: /projects
+        method: GET
+      - path: /projects
+        method: POST
+      - path: /projects
+        method: PUT
+
+  - name: custom_auth
+    apis:
+      - path: /login
+        method: POST
+      - path: /signup
+        method: POST
+
+  - name: analytics
+    apis: []
